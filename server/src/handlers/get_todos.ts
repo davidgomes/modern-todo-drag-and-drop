@@ -1,9 +1,19 @@
 
+import { db } from '../db';
+import { todosTable } from '../db/schema';
 import { type Todo } from '../schema';
+import { asc } from 'drizzle-orm';
 
 export const getTodos = async (): Promise<Todo[]> => {
-  // This is a placeholder declaration! Real code should be implemented here.
-  // The goal of this handler is fetching all todo items from the database.
-  // Results should be ordered by order_index ASC for proper display sequence.
-  return [];
+  try {
+    const results = await db.select()
+      .from(todosTable)
+      .orderBy(asc(todosTable.order_index))
+      .execute();
+
+    return results;
+  } catch (error) {
+    console.error('Get todos failed:', error);
+    throw error;
+  }
 };

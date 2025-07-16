@@ -1,16 +1,33 @@
 
+import { db } from '../db';
+import { todosTable } from '../db/schema';
 import { type CreateTodoInput, type Todo } from '../schema';
+import { sql } from 'drizzle-orm';
 
 export const createTodo = async (input: CreateTodoInput): Promise<Todo> => {
-  // This is a placeholder declaration! Real code should be implemented here.
-  // The goal of this handler is creating a new todo item and persisting it in the database.
-  // It should automatically assign the next available order_index (highest current index + 1).
-  return Promise.resolve({
-    id: 0, // Placeholder ID
-    title: input.title,
-    description: input.description,
-    order_index: 0, // Placeholder order index
-    created_at: new Date(),
-    updated_at: new Date()
-  } as Todo);
+  try {
+    // Get the next available order_index (highest current index + 1)
+    const maxOrderResult = await db.select({
+      maxOrder: sql<number>`COALESCE(MAX(${todosTable.order_index}), -1)`
+    })
+    .from(todosTable)
+    .execute();
+
+    const nextOrderIndex = maxOrderResult[0].maxOrder + 1;
+
+    // Insert todo record
+    const result = await db.insert(todosTable)
+      .values({
+        title: input.title,
+        description: input.description,
+        order_index: nextOrderIndex
+      })
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('Todo creation failed:', error);
+    throw error;
+  }
 };
